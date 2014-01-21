@@ -2,10 +2,12 @@ stools
 ======
 
 ## scron定时任务程序
+
 ### 功能，
-1.一次部署，通过web添加任务
-2.日志输出，
-3.超时处理或报警
+
+1 一次部署，通过web添加任务
+2 日志输出，
+3 超时处理或报警
 
 ### 依赖 mysql
 
@@ -14,13 +16,19 @@ stools
 本程序不包含Web操作，可自行设计Web程序，操作数据库即可。
 
 *默认会查找 /etc/scron.conf文件*
+```
 python scron.py
+```
 
 *指定scron.conf文件*
+```
 python scron.py -c scron.conf
+```
 
 *指定部署环境*
+```
 python scron.py -c scron.conf -e dev
+```
 
 ### scron.conf
 
@@ -59,7 +67,7 @@ host_table_name = sys_crontab_host
 iskill = 1
 ```
 
-cron_table_name是任务表名，host_table_name是主机表名, iskill=1表示超时后，会自动杀掉
+cron_table_name是任务表名，host_table_name是主机表名, iskill=1表示超时后，会自动杀掉，不杀掉请设置成0
 
 ### 表结构
 ```
