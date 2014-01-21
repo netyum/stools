@@ -11,7 +11,7 @@ stools
 
 ### 依赖 mysql
 
-### 部署
+### 运行
 
 本程序不包含Web操作，可自行设计Web程序，操作数据库即可。
 
@@ -28,6 +28,13 @@ python scron.py -c scron.conf
 *指定部署环境*
 ```
 python scron.py -c scron.conf -e dev
+```
+
+### 部署
+
+*部署在类(nix)在机器的crontab中
+```
+*/1 * * * * python scron.py
 ```
 
 ### scron.conf
