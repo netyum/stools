@@ -61,9 +61,9 @@ class System :
 
     def run(self, user, command, params, log, error_log) :
         if user != "" or user != "root" :
-          cmd = "setsid su %s -c 'setsid %s %s >> %s & 2>%s'" % (user, command, params, log, error_log)
+          cmd = "setsid su %s -c 'setsid %s %s >> %s 2>>%s &'" % (user, command, params, log, error_log)
         else :
-          cmd = "setsid %s %s >> %s & 2>%s" % (command, params, log, error_log)
+          cmd = "setsid %s %s >> %s 2>>%s &" % (command, params, log, error_log)
         os.system(cmd)
 
     def check_timeout(self, command, params, msg, iskill) :
