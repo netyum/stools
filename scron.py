@@ -60,7 +60,7 @@ class System :
         return num
 
     def run(self, user, command, params, log, error_log) :
-        if user != "" or user != "root" :
+        if user != "" and user != "root" :
           cmd = "setsid su %s -c 'setsid %s %s >> %s 2>>%s &'" % (user, command, params, log, error_log)
         else :
           cmd = "setsid %s %s >> %s 2>>%s &" % (command, params, log, error_log)
