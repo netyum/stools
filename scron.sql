@@ -13,6 +13,7 @@ CREATE TABLE `sys_crontab` (
   `logFile` varchar(255) NOT NULL DEFAULT '' COMMENT '超时之后回调脚本',
   `timeout` int(11) NOT NULL DEFAULT '0' COMMENT '分钟',
   `user` varchar(255) NOT NULL,
+  `errorLogUpdatedSize` varchar(255) NOT NULL DEFAULT '0' COMMENT '错误日志大小',
   PRIMARY KEY (`cronId`)
 ) ENGINE=MyISAM AUTO_INCREMENT=275 DEFAULT CHARSET=utf8;
 

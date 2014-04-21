@@ -21,8 +21,18 @@ localip = socket.gethostbyname(hostname)
 
 # 报警函数
 def waring(msg) :
-    print msg
+    ymdhms = time.strftime("%Y-%m-%d %H:%M:%S")
+    timemsg = "[%s] %s" % (ymdhms, msg)
+    info(msg)
+
     # 报警脚本，自己定义
+    #waring_cmd = "waring \"%s\"" % (timemsg, )
+    #os.system(waring_cmd)
+
+def info(msg) :
+    ymdhms = time.strftime("%Y-%m-%d %H:%M:%S")
+    timemsg = "[%s] %s" % (ymdhms, msg)
+    print timemsg
 
 def usage() :
     print "usage: scron -c /etc/scron.conf -e pro"
@@ -64,6 +74,7 @@ class System :
           cmd = "setsid su %s -c 'setsid %s %s >> %s 2>>%s &'" % (user, command, params, log, error_log)
         else :
           cmd = "setsid %s %s >> %s 2>>%s &" % (command, params, log, error_log)
+        info( "%s %s" % (command, params))
         os.system(cmd)
 
     def check_timeout(self, command, params, msg, iskill) :
@@ -81,10 +92,27 @@ class System :
 
             run_time = self.get_run_minute(vs[0])
             if run_time > timeout :
-                waring(msg)
+                newmsg = "%s 进程id: %s" % (msg, vs[1])
                 if int(iskill) == 1 :
+                    killmsg = "%s 已经被杀掉" % (newmsg, )
+                    waring(killmsg)
                     syscmd.kill(vs[1])
+                else :
+                    waring(newmsg)
 
+    def check_error_log(self, msg, error_log, last_size) :
+        cmd = "ls -l %s | awk '{print $5}'" % (error_log, )
+        handler = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        current_size = str(handler.communicate()[0].strip())
+        if current_size == "" :
+            current_size = 0
+        if current_size == "0" :
+            return "0"
+        if last_size.strip() == "" :
+            last_size = "0"
+        if str(current_size) != str(last_size) :
+            waring(msg)
+        return current_size
 
     def get_run_minute(sef, str) :
         min = 0
@@ -252,7 +280,7 @@ if __name__ == "__main__" :
         config.readfp(open(config_file))
     except IOError, e :
         print e
-        waring("scron读取配置文件：%s出错" % (config_file, ))
+        waring("scron读取配置文件：%s出错 来自主机: %s, ip: %s" % (config_file, hostname, localip))
         sys.exit(-4)
 
     try :
@@ -268,11 +296,11 @@ if __name__ == "__main__" :
 
     except ConfigParser.NoSectionError, e :
         print e
-        waring("scron读取配置环境: %s出错" % (env, ))
+        waring("scron读取配置环境: %s出错 来自主机: %s, ip: %s" % (env, hostname, localip))
         sys.exit(-5)
     except ConfigParser.NoOptionError, e :
         print e
-        waring("scron读取配置")
+        waring("scron读取配置有误 来自主机: %s, ip: %s" % (hostname, localip))
         sys.exit(-6)
 
     syscmd.mkdir(log_path)
@@ -294,12 +322,12 @@ if __name__ == "__main__" :
             user = row["user"].strip()
             command = row["command"].strip()
             params = row["params"].strip();
-            timeout = int(row['timeout'])
-            cron_id = row['cronId'];
-            task = row['task'];
-            active = int(row['active']);
-            host_name = row['host_name'];
-
+            timeout = int(row["timeout"])
+            cron_id = row["cronId"];
+            task = row["task"];
+            active = int(row["active"]);
+            host_name = row["host_name"];
+            last_size = str(row["errorLogUpdatedSize"]);
             #check timeout
             if timeout != 0 :
                 msg = "taskId %s %s 在 %s 上运行时间已经超过了设置时间 %s 分钟。" % (cron_id, task, host_name, timeout)
@@ -322,7 +350,14 @@ if __name__ == "__main__" :
 
                 log = "/".join([log_path, date_path, log_file]);
                 error_log = "/".join([log_path, date_path, log_error_file]);
-		syscmd.run(user, command, params, log, error_log)
+                syscmd.run(user, command, params, log, error_log)
+
+                error_log_msg = "taskId %s %s 在 %s 上运行的错误日志递增。请及时查看最新错误日志。" % (cron_id, task, host_name)
+                current_size = syscmd.check_error_log(error_log_msg, error_log, last_size)
+                if (current_size != last_size) :
+                    sql = "".join(["UPDATE `%s` SET " % (cron_table_name, ), "errorLogUpdatedSize = %s WHERE cronId=%s"])
+                    cursor.execute(sql, [str(current_size), row["cronId"]])
+                    conn.commit()
 
                 sql = "".join(["UPDATE `%s` SET " % (cron_table_name, ), "runAt = %s WHERE cronId=%s"])
                 cursor.execute(sql, [str(time.time()), row["cronId"]])
